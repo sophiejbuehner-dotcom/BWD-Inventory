@@ -17,6 +17,7 @@ export const items = pgTable("items", {
   category: text("category").notNull(), // e.g., Furniture, Lighting, Decor
   imageUrl: text("image_url"),
   description: text("description"),
+  quantity: integer("quantity").notNull().default(0),
 });
 
 // Projects

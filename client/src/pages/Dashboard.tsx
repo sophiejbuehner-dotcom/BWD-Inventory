@@ -131,15 +131,16 @@ export default function Dashboard() {
                 <tr>
                   <th className="px-6 py-4">Image</th>
                   <th className="px-6 py-4">SKU</th>
-                  <th className="px-6 py-4">Name</th>
+                  <th className="px-6 py-4">Item</th>
                   <th className="px-6 py-4">Category</th>
+                  <th className="px-6 py-4 text-right">Quantity</th>
                   <th className="px-6 py-4 text-right">Client Price</th>
                   <th className="px-6 py-4 text-right">BWD Price</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {itemsLoading ? (
-                  <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Loading inventory...</td></tr>
+                  <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Loading inventory...</td></tr>
                 ) : recentItems.map((item) => (
                   <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-3">
@@ -154,6 +155,7 @@ export default function Dashboard() {
                     <td className="px-6 py-3 font-mono text-xs">{item.sku}</td>
                     <td className="px-6 py-3 font-medium">{item.name}</td>
                     <td className="px-6 py-3 text-muted-foreground">{item.category}</td>
+                    <td className="px-6 py-3 text-right">{item.quantity}</td>
                     <td className="px-6 py-3 text-right font-mono">${item.price}</td>
                     <td className="px-6 py-3 text-right font-mono">${item.bwdPrice}</td>
                   </tr>

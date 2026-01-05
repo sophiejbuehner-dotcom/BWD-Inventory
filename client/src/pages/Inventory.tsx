@@ -43,6 +43,7 @@ export default function Inventory() {
       category: "",
       description: "",
       imageUrl: "",
+      quantity: 0,
     },
   });
 
@@ -97,19 +98,34 @@ export default function Inventory() {
                 
                 <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Item Name</FormLabel>
+                    <FormLabel>Item</FormLabel>
                     <FormControl><Input placeholder="Mid-century Table Lamp" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 
-                <FormField control={form.control} name="vendor" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vendor</FormLabel>
-                    <FormControl><Input placeholder="West Elm" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="vendor" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vendor</FormLabel>
+                      <FormControl><Input placeholder="West Elm" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="quantity" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          {...field} 
+                          onChange={e => field.onChange(parseInt(e.target.value) || 0)} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="cost" render={({ field }) => (
@@ -177,9 +193,10 @@ export default function Inventory() {
               <TableRow>
                 <TableHead className="w-[80px]">Image</TableHead>
                 <TableHead>SKU</TableHead>
-                <TableHead>Name</TableHead>
+                <TableHead>Item</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Vendor</TableHead>
+                <TableHead className="text-right">Quantity</TableHead>
                 <TableHead className="text-right">Client Price</TableHead>
                 <TableHead className="text-right">BWD Price</TableHead>
               </TableRow>
@@ -187,13 +204,13 @@ export default function Inventory() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                     Loading catalog...
                   </TableCell>
                 </TableRow>
               ) : items?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                     No items found. Try a different search.
                   </TableCell>
                 </TableRow>
@@ -213,6 +230,7 @@ export default function Inventory() {
                     <TableCell className="font-medium text-foreground">{item.name}</TableCell>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.vendor}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
                     <TableCell className="text-right font-mono">${item.price}</TableCell>
                     <TableCell className="text-right font-mono">${item.bwdPrice}</TableCell>
                   </TableRow>
