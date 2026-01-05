@@ -37,6 +37,19 @@ export async function registerRoutes(
     }
   });
 
+  app.patch(api.items.update.path, async (req, res) => {
+    try {
+      const input = api.items.update.input.parse(req.body);
+      const item = await storage.updateItem(Number(req.params.id), input);
+      res.json(item);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(404).json({ message: "Item not found" });
+    }
+  });
+
   // === Projects ===
   app.get(api.projects.list.path, async (req, res) => {
     const projects = await storage.getProjects();

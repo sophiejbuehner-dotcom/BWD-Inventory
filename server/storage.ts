@@ -14,6 +14,7 @@ export interface IStorage {
   getItem(id: number): Promise<Item | undefined>;
   getItemBySku(sku: string): Promise<Item | undefined>;
   createItem(item: InsertItem): Promise<Item>;
+  updateItem(id: number, updates: Partial<InsertItem>): Promise<Item>;
 
   // Projects
   getProjects(): Promise<Project[]>;
@@ -49,6 +50,15 @@ export class DatabaseStorage implements IStorage {
   async createItem(insertItem: InsertItem): Promise<Item> {
     const [item] = await db.insert(items).values(insertItem).returning();
     return item;
+  }
+
+  async updateItem(id: number, updates: Partial<InsertItem>): Promise<Item> {
+    const [updated] = await db.update(items)
+      .set(updates)
+      .where(eq(items.id, id))
+      .returning();
+    if (!updated) throw new Error("Item not found");
+    return updated;
   }
 
   // Projects
