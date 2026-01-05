@@ -97,7 +97,6 @@ export default function Dashboard() {
                         {project.status}
                       </span>
                     </div>
-                    <CardDescription>Client: {project.clientName}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="text-sm text-muted-foreground">

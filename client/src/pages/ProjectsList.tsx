@@ -107,7 +107,6 @@ export default function ProjectsList() {
                     </span>
                   </div>
                   <CardTitle className="font-display text-xl">{project.name}</CardTitle>
-                  <CardDescription>Client: {project.clientName}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground pt-4 border-t border-border mt-2">
