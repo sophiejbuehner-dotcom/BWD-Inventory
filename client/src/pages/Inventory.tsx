@@ -18,8 +18,9 @@ import { useToast } from "@/hooks/use-toast";
 
 // Helper to coerce number strings
 const formSchema = insertItemSchema.extend({
-  cost: insertItemSchema.shape.cost, // kept as string/decimal in z schema usually, but let's be safe
+  cost: insertItemSchema.shape.cost,
   price: insertItemSchema.shape.price,
+  bwdPrice: insertItemSchema.shape.bwdPrice,
 });
 
 export default function Inventory() {
@@ -38,6 +39,7 @@ export default function Inventory() {
       vendor: "",
       cost: "0",
       price: "0",
+      bwdPrice: "0",
       category: "",
       description: "",
       imageUrl: "",
@@ -126,6 +128,14 @@ export default function Inventory() {
                   )} />
                 </div>
                 
+                <FormField control={form.control} name="bwdPrice" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>BWD Price ($)</FormLabel>
+                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                
                 <FormField control={form.control} name="imageUrl" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Image URL (Optional)</FormLabel>
@@ -164,48 +174,50 @@ export default function Inventory() {
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80px]">Image</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Vendor</TableHead>
-              <TableHead className="text-right">Price</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                  Loading catalog...
-                </TableCell>
+                <TableHead className="w-[80px]">Image</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Vendor</TableHead>
+                <TableHead className="text-right">Client Price</TableHead>
+                <TableHead className="text-right">BWD Price</TableHead>
               </TableRow>
-            ) : items?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                  No items found. Try a different search.
-                </TableCell>
-              </TableRow>
-            ) : (
-              items?.map((item) => (
-                <TableRow key={item.id} className="hover:bg-muted/30 transition-colors cursor-pointer group">
-                  <TableCell>
-                    <div className="w-12 h-12 rounded bg-secondary overflow-hidden flex items-center justify-center">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <PackageOpen className="w-6 h-6 text-muted-foreground/50" />
-                      )}
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                    Loading catalog...
                   </TableCell>
-                  <TableCell className="font-mono text-xs font-medium">{item.sku}</TableCell>
-                  <TableCell className="font-medium text-foreground">{item.name}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>{item.vendor}</TableCell>
-                  <TableCell className="text-right font-mono">${item.price}</TableCell>
                 </TableRow>
-              ))
-            )}
+              ) : items?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                    No items found. Try a different search.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                items?.map((item) => (
+                  <TableRow key={item.id} className="hover:bg-muted/30 transition-colors cursor-pointer group">
+                    <TableCell>
+                      <div className="w-12 h-12 rounded bg-secondary overflow-hidden flex items-center justify-center">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <PackageOpen className="w-6 h-6 text-muted-foreground/50" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs font-medium">{item.sku}</TableCell>
+                    <TableCell className="font-medium text-foreground">{item.name}</TableCell>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell>{item.vendor}</TableCell>
+                    <TableCell className="text-right font-mono">${item.price}</TableCell>
+                    <TableCell className="text-right font-mono">${item.bwdPrice}</TableCell>
+                  </TableRow>
+                ))
+              )}
           </TableBody>
         </Table>
       </div>
