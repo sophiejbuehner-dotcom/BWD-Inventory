@@ -62,7 +62,7 @@ export default function Inventory() {
     <Layout>
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-primary">Master Inventory</h1>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-primary">Inventory</h1>
           <p className="text-muted-foreground mt-1">Manage your complete catalog of accessories and furniture.</p>
         </div>
         
