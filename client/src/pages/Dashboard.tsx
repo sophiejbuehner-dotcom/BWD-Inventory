@@ -29,39 +29,45 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-white to-neutral-50 border-border/50 shadow-sm hover:shadow-md transition-all">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Projects</CardTitle>
-            <Clock className="w-4 h-4 text-primary/50" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-display font-bold text-foreground">
-              {projectsLoading ? "..." : activeProjects.length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-white to-neutral-50 border-border/50 shadow-sm hover:shadow-md transition-all">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Inventory</CardTitle>
-            <Package className="w-4 h-4 text-primary/50" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-display font-bold text-foreground">
-              {itemsLoading ? "..." : items?.length || 0}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-white to-neutral-50 border-border/50 shadow-sm hover:shadow-md transition-all">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Archived</CardTitle>
-            <Archive className="w-4 h-4 text-primary/50" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-display font-bold text-foreground">
-              {projectsLoading ? "..." : projects?.filter(p => p.status === "archived").length || 0}
-            </div>
-          </CardContent>
-        </Card>
+        <Link href="/projects" className="block transition-transform hover:scale-[1.01] active:scale-[0.99]">
+          <Card className="bg-gradient-to-br from-white to-neutral-50 border-border/50 shadow-sm hover:shadow-md transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Projects</CardTitle>
+              <Clock className="w-4 h-4 text-primary/50" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-display font-bold text-foreground">
+                {projectsLoading ? "..." : activeProjects.length}
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/inventory" className="block transition-transform hover:scale-[1.01] active:scale-[0.99]">
+          <Card className="bg-gradient-to-br from-white to-neutral-50 border-border/50 shadow-sm hover:shadow-md transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Inventory</CardTitle>
+              <Package className="w-4 h-4 text-primary/50" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-display font-bold text-foreground">
+                {itemsLoading ? "..." : items?.length || 0}
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/projects" className="block transition-transform hover:scale-[1.01] active:scale-[0.99]">
+          <Card className="bg-gradient-to-br from-white to-neutral-50 border-border/50 shadow-sm hover:shadow-md transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Archived</CardTitle>
+              <Archive className="w-4 h-4 text-primary/50" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-display font-bold text-foreground">
+                {projectsLoading ? "..." : projects?.filter(p => p.status === "archived").length || 0}
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Active Projects List */}
