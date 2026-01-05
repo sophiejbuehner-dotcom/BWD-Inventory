@@ -128,13 +128,6 @@ export default function Inventory() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="cost" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cost ($)</FormLabel>
-                      <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
                   <FormField control={form.control} name="price" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client Price ($)</FormLabel>
@@ -142,15 +135,14 @@ export default function Inventory() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  <FormField control={form.control} name="bwdPrice" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>BWD Price ($)</FormLabel>
+                      <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 </div>
-                
-                <FormField control={form.control} name="bwdPrice" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>BWD Price ($)</FormLabel>
-                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
                 
                 <FormField control={form.control} name="imageUrl" render={({ field }) => (
                   <FormItem>
