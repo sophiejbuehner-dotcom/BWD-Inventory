@@ -12,7 +12,8 @@ export const items = pgTable("items", {
   name: text("name").notNull(),
   vendor: text("vendor").notNull(),
   cost: decimal("cost", { precision: 10, scale: 2 }).notNull(),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(), // Retail/Client price
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(), // Client price
+  bwdPrice: decimal("bwd_price", { precision: 10, scale: 2 }).notNull().default("0.00"), // BWD price
   category: text("category").notNull(), // e.g., Furniture, Lighting, Decor
   imageUrl: text("image_url"),
   description: text("description"),
