@@ -1,0 +1,284 @@
+import { Layout } from "@/components/Layout";
+import { useParams, Link } from "wouter";
+import { useProject } from "@/hooks/use-projects";
+import { useItemBySku } from "@/hooks/use-items";
+import { useAddProjectItem, useUpdateProjectItem, useDeleteProjectItem } from "@/hooks/use-project-items";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from "@/components/ui/table";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen } from "lucide-react";
+import Papa from "papaparse";
+import { useToast } from "@/hooks/use-toast";
+
+export default function ProjectDetails() {
+  const { id } = useParams<{ id: string }>();
+  const projectId = Number(id);
+  const { toast } = useToast();
+  
+  const { data: project, isLoading: projectLoading } = useProject(projectId);
+  const addMutation = useAddProjectItem(projectId);
+  const updateMutation = useUpdateProjectItem(projectId);
+  const deleteMutation = useDeleteProjectItem(projectId);
+
+  // Quick Add State
+  const [skuInput, setSkuInput] = useState("");
+  const [debouncedSku, setDebouncedSku] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
+  // Debounce SKU input for query
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSku(skuInput), 500);
+    return () => clearTimeout(timer);
+  }, [skuInput]);
+
+  const { data: foundItem, isLoading: isSearching, isError: isSearchError } = useItemBySku(debouncedSku);
+
+  useEffect(() => {
+    if (foundItem && !showConfirmModal) {
+      setShowConfirmModal(true);
+    }
+  }, [foundItem]);
+
+  const handleAddItem = async () => {
+    if (!foundItem) return;
+    try {
+      await addMutation.mutateAsync({ itemId: foundItem.id, quantity: 1, status: "pulled" });
+      toast({ title: "Item Added", description: `${foundItem.name} added to project list.` });
+      setSkuInput("");
+      setDebouncedSku("");
+      setShowConfirmModal(false);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to add item.", variant: "destructive" });
+    }
+  };
+
+  const handleStatusChange = async (itemId: number, newStatus: string) => {
+    try {
+      await updateMutation.mutateAsync({ itemId, updates: { status: newStatus } });
+      toast({ title: "Status Updated" });
+    } catch (error) {
+      toast({ title: "Update Failed", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (itemId: number) => {
+    if (confirm("Are you sure you want to remove this item?")) {
+      try {
+        await deleteMutation.mutateAsync(itemId);
+        toast({ title: "Item Removed" });
+      } catch (error) {
+        toast({ title: "Remove Failed", variant: "destructive" });
+      }
+    }
+  };
+
+  const exportCSV = () => {
+    if (!project?.items) return;
+    const data = project.items.map(pi => ({
+      SKU: pi.item.sku,
+      Name: pi.item.name,
+      Category: pi.item.category,
+      Vendor: pi.item.vendor,
+      Price: pi.item.price,
+      Cost: pi.item.cost,
+      Status: pi.status,
+      Notes: pi.notes || ""
+    }));
+    
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${project.name.replace(/\s+/g, '_')}_pull_list.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (projectLoading) return <Layout><div className="flex h-96 items-center justify-center"><Loader2 className="animate-spin" /></div></Layout>;
+  if (!project) return <Layout><div>Project not found</div></Layout>;
+
+  return (
+    <Layout>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+        <Link href="/projects" className="hover:text-primary flex items-center gap-1">
+          <ArrowLeft className="w-4 h-4" /> Back to Projects
+        </Link>
+        <span>/</span>
+        <span>{project.name}</span>
+      </div>
+
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-primary">{project.name}</h1>
+          <p className="text-xl text-muted-foreground mt-1">{project.clientName}</p>
+        </div>
+        <div className="flex gap-2">
+           <Button variant="outline" onClick={exportCSV}>
+             <Download className="w-4 h-4 mr-2" /> Export CSV
+           </Button>
+           <Button variant="default" className="bg-primary text-primary-foreground">
+             Edit Project
+           </Button>
+        </div>
+      </header>
+
+      {/* Quick Add Bar */}
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-8">
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+            <Input 
+              placeholder="Scan or type SKU to add item..." 
+              className="pl-10 py-6 text-lg font-mono bg-background"
+              value={skuInput}
+              onChange={(e) => setSkuInput(e.target.value)}
+              autoFocus
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              </div>
+            )}
+          </div>
+          <div className="text-sm text-muted-foreground hidden md:block">
+            Press Enter or scan barcode
+          </div>
+        </div>
+        {isSearchError && skuInput.length > 2 && (
+          <p className="text-red-500 text-sm mt-2 ml-2">Item not found with SKU: {skuInput}</p>
+        )}
+      </div>
+
+      {/* Confirmation Modal for Quick Add */}
+      <Dialog open={showConfirmModal} onOpenChange={(open) => {
+        setShowConfirmModal(open);
+        if (!open) setSkuInput(""); 
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Item to Project?</DialogTitle>
+            <DialogDescription>Confirm adding this item to the pull list.</DialogDescription>
+          </DialogHeader>
+          {foundItem && (
+            <div className="flex gap-4 py-4">
+              <div className="w-24 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                {foundItem.imageUrl ? (
+                  <img src={foundItem.imageUrl} alt={foundItem.name} className="w-full h-full object-cover" />
+                ) : (
+                  <PackageOpen className="w-10 h-10 m-auto text-muted-foreground" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">{foundItem.name}</h3>
+                <p className="text-sm text-muted-foreground font-mono">{foundItem.sku}</p>
+                <div className="mt-2 text-sm">
+                  <span className="font-medium">Vendor:</span> {foundItem.vendor}
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">Price:</span> ${foundItem.price}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmModal(false)}>Cancel</Button>
+            <Button onClick={handleAddItem} disabled={addMutation.isPending}>
+              {addMutation.isPending ? "Adding..." : "Add to Project"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Project Items Table */}
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-border">
+          <h2 className="text-xl font-bold">Pull List</h2>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[80px]">Image</TableHead>
+              <TableHead>Item Details</TableHead>
+              <TableHead>Vendor</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Price</TableHead>
+              <TableHead className="w-[100px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {project.items?.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  No items in this project yet. Scan a SKU above to start.
+                </TableCell>
+              </TableRow>
+            ) : (
+              project.items.map((pi) => (
+                <TableRow key={pi.id}>
+                  <TableCell>
+                    <div className="w-12 h-12 rounded bg-muted overflow-hidden flex items-center justify-center">
+                      {pi.item.imageUrl ? (
+                        <img src={pi.item.imageUrl} alt={pi.item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <PackageOpen className="w-6 h-6 text-muted-foreground/50" />
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{pi.item.name}</div>
+                      <div className="text-xs text-muted-foreground font-mono">{pi.item.sku}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{pi.item.vendor}</TableCell>
+                  <TableCell>
+                    <Select 
+                      defaultValue={pi.status} 
+                      onValueChange={(val) => handleStatusChange(pi.id, val)}
+                    >
+                      <SelectTrigger className={`w-[130px] h-8 border-none font-medium ${
+                        pi.status === 'pulled' ? 'bg-blue-100 text-blue-700' :
+                        pi.status === 'installed' ? 'bg-green-100 text-green-700' :
+                        pi.status === 'returned' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pulled">Pulled</SelectItem>
+                        <SelectItem value="installed">Installed</SelectItem>
+                        <SelectItem value="returned">Returned</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="text-right font-mono">${pi.item.price}</TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDelete(pi.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </Layout>
+  );
+}
