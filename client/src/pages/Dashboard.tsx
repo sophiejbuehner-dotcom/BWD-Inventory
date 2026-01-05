@@ -45,7 +45,7 @@ export default function Dashboard() {
         <Link href="/projects" className="block transition-transform hover:scale-[1.01] active:scale-[0.99]">
           <Card className="bg-gradient-to-br from-white to-neutral-50 border-border/50 shadow-sm hover:shadow-md transition-all h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Projects</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Current Projects</CardTitle>
               <Clock className="w-4 h-4 text-primary/50" />
             </CardHeader>
             <CardContent>
@@ -73,7 +73,7 @@ export default function Dashboard() {
       {/* Active Projects List */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-foreground">Active Projects</h2>
+          <h2 className="text-xl font-bold text-foreground">Current Projects</h2>
           <Link href="/projects" className="text-sm text-primary hover:underline flex items-center gap-1">
             View all <ArrowRight className="w-4 h-4" />
           </Link>
