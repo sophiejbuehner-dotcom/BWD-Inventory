@@ -53,3 +53,25 @@ export function useCreateProject() {
     },
   });
 }
+
+export function useUpdateProject(id: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Partial<CreateProjectRequest>) => {
+      const url = buildUrl(api.projects.update.path, { id });
+      const res = await fetch(url, {
+        method: api.projects.update.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      
+      if (!res.ok) throw new Error("Failed to update project");
+      return api.projects.update.responses[200].parse(await res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.projects.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.projects.get.path, id] });
+    },
+  });
+}
