@@ -67,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetTrigger asChild className="md:hidden fixed top-6 left-6 z-50">
+        <SheetTrigger asChild className="md:hidden absolute top-6 left-6 z-50">
           <Button variant="outline" size="icon" className="shadow-md">
             <Menu className="w-5 h-5" />
           </Button>
@@ -78,7 +78,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </Sheet>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 p-6 md:p-12 transition-all duration-300">
+      <main className="flex-1 md:ml-64 p-6 md:p-12 transition-all duration-300 relative">
         <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-16 md:pt-0">
           {children}
         </div>
