@@ -64,6 +64,19 @@ export async function registerRoutes(
     }
   });
 
+  app.patch(api.projects.update.path, async (req, res) => {
+    try {
+      const input = api.projects.update.input.parse(req.body);
+      const project = await storage.updateProject(Number(req.params.id), input);
+      res.json(project);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(404).json({ message: "Project not found" });
+    }
+  });
+
   // === Project Items ===
   app.post(api.projectItems.add.path, async (req, res) => {
     try {

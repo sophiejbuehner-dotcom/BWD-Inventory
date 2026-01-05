@@ -1,6 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { useParams, Link } from "wouter";
-import { useProject } from "@/hooks/use-projects";
+import { useProject, useUpdateProject } from "@/hooks/use-projects";
 import { useItemBySku } from "@/hooks/use-items";
 import { useAddProjectItem, useUpdateProjectItem, useDeleteProjectItem } from "@/hooks/use-project-items";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen } from "lucide-react";
+import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive } from "lucide-react";
 import Papa from "papaparse";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +24,7 @@ export default function ProjectDetails() {
   const { toast } = useToast();
   
   const { data: project, isLoading: projectLoading } = useProject(projectId);
+  const updateProjectMutation = useUpdateProject(projectId);
   const addMutation = useAddProjectItem(projectId);
   const updateMutation = useUpdateProjectItem(projectId);
   const deleteMutation = useDeleteProjectItem(projectId);
@@ -57,6 +58,17 @@ export default function ProjectDetails() {
       setShowConfirmModal(false);
     } catch (error) {
       toast({ title: "Error", description: "Failed to add item.", variant: "destructive" });
+    }
+  };
+
+  const handleArchiveProject = async () => {
+    if (confirm("Are you sure you want to archive this project?")) {
+      try {
+        await updateProjectMutation.mutateAsync({ status: "archived" });
+        toast({ title: "Project Archived" });
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to archive project.", variant: "destructive" });
+      }
     }
   };
 
@@ -127,6 +139,11 @@ export default function ProjectDetails() {
            <Button variant="outline" onClick={exportCSV}>
              <Download className="w-4 h-4 mr-2" /> Export CSV
            </Button>
+           {project.status !== 'archived' && (
+             <Button variant="outline" className="text-muted-foreground hover:text-destructive" onClick={handleArchiveProject}>
+               <Archive className="w-4 h-4 mr-2" /> Archive Project
+             </Button>
+           )}
            <Button variant="default" className="bg-primary text-primary-foreground">
              Edit Project
            </Button>

@@ -75,6 +75,15 @@ export const api = {
         400: errorSchemas.validation,
       },
     },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/projects/:id',
+      input: insertProjectSchema.partial(),
+      responses: {
+        200: z.custom<typeof projects.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
   },
   projectItems: {
     add: {
