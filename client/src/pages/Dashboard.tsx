@@ -18,7 +18,7 @@ export default function Dashboard() {
     <Layout>
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-primary">Overview</h1>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-primary">BWD Inventory Overview</h1>
           <p className="text-muted-foreground mt-2">Welcome back, Jane. Here's what's happening today.</p>
         </div>
         <Link href="/projects">
