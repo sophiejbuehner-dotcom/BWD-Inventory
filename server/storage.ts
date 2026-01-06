@@ -104,18 +104,59 @@ export class DatabaseStorage implements IStorage {
   // Project Items
   async addProjectItem(insertProjectItem: InsertProjectItem): Promise<ProjectItem> {
     const [item] = await db.insert(projectItems).values(insertProjectItem).returning();
+    
+    // Deduct quantity from master inventory
+    const [currentMasterItem] = await db.select().from(items).where(eq(items.id, insertProjectItem.itemId));
+    if (currentMasterItem) {
+      const quantityToDeduct = insertProjectItem.quantity ?? 1;
+      const newQuantity = Math.max(0, currentMasterItem.quantity - quantityToDeduct);
+      await db.update(items)
+        .set({ quantity: newQuantity })
+        .where(eq(items.id, insertProjectItem.itemId));
+    }
+    
     return item;
   }
 
   async updateProjectItem(id: number, updates: Partial<InsertProjectItem>): Promise<ProjectItem> {
+    const [existing] = await db.select().from(projectItems).where(eq(projectItems.id, id));
     const [updated] = await db.update(projectItems)
       .set(updates)
       .where(eq(projectItems.id, id))
       .returning();
+
+    // If status changed to returned, add back to inventory
+    if (existing && updates.status === 'returned' && existing.status !== 'returned') {
+      const [masterItem] = await db.select().from(items).where(eq(items.id, existing.itemId));
+      if (masterItem) {
+        await db.update(items)
+          .set({ quantity: masterItem.quantity + existing.quantity })
+          .where(eq(items.id, existing.itemId));
+      }
+    } else if (existing && updates.status !== 'returned' && existing.status === 'returned') {
+      // If changed FROM returned to something else, subtract again
+      const [masterItem] = await db.select().from(items).where(eq(items.id, existing.itemId));
+      if (masterItem) {
+        await db.update(items)
+          .set({ quantity: Math.max(0, masterItem.quantity - existing.quantity) })
+          .where(eq(items.id, existing.itemId));
+      }
+    }
+    
     return updated;
   }
 
   async deleteProjectItem(id: number): Promise<void> {
+    const [existing] = await db.select().from(projectItems).where(eq(projectItems.id, id));
+    if (existing && existing.status !== 'returned') {
+      // If deleting an item that wasn't returned, add back to stock
+      const [masterItem] = await db.select().from(items).where(eq(items.id, existing.itemId));
+      if (masterItem) {
+        await db.update(items)
+          .set({ quantity: masterItem.quantity + existing.quantity })
+          .where(eq(items.id, existing.itemId));
+      }
+    }
     await db.delete(projectItems).where(eq(projectItems.id, id));
   }
 }

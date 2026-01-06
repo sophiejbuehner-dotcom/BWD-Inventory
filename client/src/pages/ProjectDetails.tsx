@@ -39,6 +39,7 @@ export default function ProjectDetails() {
 
   // Quick Add State
   const [skuInput, setSkuInput] = useState("");
+  const [itemQuantity, setItemQuantity] = useState(1);
   const [debouncedSku, setDebouncedSku] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   
@@ -59,10 +60,11 @@ export default function ProjectDetails() {
   const handleAddItem = async () => {
     if (!foundItem) return;
     try {
-      await addMutation.mutateAsync({ itemId: foundItem.id, quantity: 1, status: "pulled" });
+      await addMutation.mutateAsync({ itemId: foundItem.id, quantity: itemQuantity, status: "pulled" });
       toast({ title: "Item Added", description: `${foundItem.name} added to project list.` });
       setSkuInput("");
       setDebouncedSku("");
+      setItemQuantity(1);
       setShowConfirmModal(false);
     } catch (error) {
       toast({ title: "Error", description: "Failed to add item.", variant: "destructive" });
@@ -142,7 +144,7 @@ export default function ProjectDetails() {
     if (!project?.items) return 0;
     return project.items.reduce((sum, pi) => {
       if (pi.status === 'returned') return sum;
-      return sum + Number(pi.item.price || 0);
+      return sum + (Number(pi.item.price || 0) * pi.quantity);
     }, 0);
   };
 
@@ -232,23 +234,42 @@ export default function ProjectDetails() {
             <DialogDescription>Confirm adding this item to the pull list.</DialogDescription>
           </DialogHeader>
           {foundItem && (
-            <div className="flex gap-4 py-4">
-              <div className="w-24 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                {foundItem.imageUrl ? (
-                  <img src={foundItem.imageUrl} alt={foundItem.name} className="w-full h-full object-cover" />
-                ) : (
-                  <PackageOpen className="w-10 h-10 m-auto text-muted-foreground" />
-                )}
+            <div className="flex flex-col gap-6 py-4">
+              <div className="flex gap-4">
+                <div className="w-24 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                  {foundItem.imageUrl ? (
+                    <img src={foundItem.imageUrl} alt={foundItem.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <PackageOpen className="w-10 h-10 m-auto text-muted-foreground" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">{foundItem.name}</h3>
+                  <p className="text-sm text-muted-foreground font-mono">{foundItem.sku}</p>
+                  <div className="mt-2 text-sm">
+                    <span className="font-medium">Vendor:</span> {foundItem.vendor}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">In Stock:</span> {foundItem.quantity}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Price:</span> ${foundItem.price}
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">{foundItem.name}</h3>
-                <p className="text-sm text-muted-foreground font-mono">{foundItem.sku}</p>
-                <div className="mt-2 text-sm">
-                  <span className="font-medium">Vendor:</span> {foundItem.vendor}
-                </div>
-                <div className="text-sm">
-                  <span className="font-medium">Price:</span> ${foundItem.price}
-                </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantity to Pull</label>
+                <Input
+                  type="number"
+                  min="1"
+                  max={foundItem.quantity}
+                  value={itemQuantity}
+                  onChange={(e) => setItemQuantity(parseInt(e.target.value) || 1)}
+                />
+                {itemQuantity > foundItem.quantity && (
+                  <p className="text-sm text-destructive">Warning: Requested quantity exceeds stock.</p>
+                )}
               </div>
             </div>
           )}
@@ -272,6 +293,7 @@ export default function ProjectDetails() {
               <TableHead className="w-[80px]">Image</TableHead>
               <TableHead>Item</TableHead>
               <TableHead>Vendor</TableHead>
+              <TableHead className="text-center">Qty</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Client Price</TableHead>
               <TableHead className="text-right">BWD Price</TableHead>
@@ -304,6 +326,7 @@ export default function ProjectDetails() {
                     </div>
                   </TableCell>
                   <TableCell>{pi.item.vendor}</TableCell>
+                  <TableCell className="text-center font-medium">{pi.quantity}</TableCell>
                   <TableCell>
                     <Select 
                       defaultValue={pi.status} 
