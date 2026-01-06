@@ -11,7 +11,8 @@ export default function Dashboard() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: items, isLoading: itemsLoading } = useItems();
 
-  const activeProjects = projects?.filter(p => p.status === "active") || [];
+  const activeProjects = projects?.filter(p => !p.isArchived) || [];
+  const archivedProjects = projects?.filter(p => p.isArchived) || [];
   const recentItems = items?.slice(0, 5) || [];
 
   return (
@@ -98,9 +99,6 @@ export default function Dashboard() {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="font-display text-xl">{project.name}</CardTitle>
-                      <span className="text-xs font-mono px-2 py-1 rounded bg-secondary text-secondary-foreground">
-                        {project.status}
-                      </span>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -114,6 +112,35 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+
+      {/* Archived Projects List */}
+      {archivedProjects.length > 0 && (
+        <section className="space-y-4 pt-8 border-t border-border/50">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-muted-foreground">Archived Projects</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
+            {archivedProjects.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`} className="group block">
+                <Card className="h-full hover:border-border transition-all duration-300 hover:shadow-md cursor-pointer overflow-hidden grayscale-[0.5]">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="font-display text-xl text-muted-foreground">{project.name}</CardTitle>
+                      <Archive className="w-4 h-4 text-muted-foreground/50" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-muted-foreground">
+                      Archived {format(new Date(project.createdAt || new Date()), 'MMM d, yyyy')}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
       
       {/* Quick Inventory Preview */}
       <section className="space-y-4 pt-4">
