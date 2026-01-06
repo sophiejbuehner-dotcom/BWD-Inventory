@@ -138,6 +138,16 @@ export default function ProjectDetails() {
     document.body.removeChild(link);
   };
 
+  const calculateTotal = () => {
+    if (!project?.items) return 0;
+    return project.items.reduce((sum, pi) => {
+      if (pi.status === 'returned') return sum;
+      return sum + Number(pi.item.price || 0);
+    }, 0);
+  };
+
+  const projectTotal = calculateTotal();
+
   if (projectLoading) return <Layout><div className="flex h-96 items-center justify-center"><Loader2 className="animate-spin" /></div></Layout>;
   if (!project) return <Layout><div>Project not found</div></Layout>;
 
@@ -155,6 +165,10 @@ export default function ProjectDetails() {
         <div>
           <h1 className="text-3xl md:text-4xl font-display font-bold text-primary">{project.name}</h1>
           <p className="text-xl text-muted-foreground mt-1">{project.clientName}</p>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Project Total:</span>
+            <span className="text-2xl font-bold text-primary font-mono">${projectTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
         </div>
         <div className="flex gap-2">
            <Button variant="outline" onClick={exportCSV}>
