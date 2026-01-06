@@ -119,7 +119,8 @@ export default function ProjectDetails() {
       Name: pi.item.name,
       Category: pi.item.category,
       Vendor: pi.item.vendor,
-      Price: pi.item.price,
+      "Client Price": pi.item.price,
+      "BWD Price": pi.item.bwdPrice || '0.00',
       Cost: pi.item.cost,
       Status: pi.status,
       Notes: pi.notes || ""
@@ -255,10 +256,11 @@ export default function ProjectDetails() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">Image</TableHead>
-              <TableHead>Item Details</TableHead>
+              <TableHead>Item</TableHead>
               <TableHead>Vendor</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Price</TableHead>
+              <TableHead className="text-right">Client Price</TableHead>
+              <TableHead className="text-right">BWD Price</TableHead>
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -309,6 +311,7 @@ export default function ProjectDetails() {
                     </Select>
                   </TableCell>
                   <TableCell className="text-right font-mono">${pi.item.price}</TableCell>
+                  <TableCell className="text-right font-mono text-muted-foreground">${pi.item.bwdPrice || '0.00'}</TableCell>
                   <TableCell>
                     <Button 
                       variant="ghost" 
