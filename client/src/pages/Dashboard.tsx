@@ -11,8 +11,8 @@ export default function Dashboard() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: items, isLoading: itemsLoading } = useItems();
 
-  const activeProjects = projects?.filter(p => !p.isArchived) || [];
-  const archivedProjects = projects?.filter(p => p.isArchived) || [];
+  const activeProjects = projects?.filter(p => p.status !== "archived") || [];
+  const archivedProjects = projects?.filter(p => p.status === "archived") || [];
   const recentItems = items?.slice(0, 5) || [];
 
   return (
