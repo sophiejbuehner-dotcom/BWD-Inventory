@@ -197,9 +197,17 @@ function ItemDialog({
 
 export default function Inventory() {
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const { data: items, isLoading } = useItems(search);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | undefined>(undefined);
+
+  const categories = ["all", "art", "ceramics", "fenway", "kitchen", "bathroom"];
+
+  const filteredItems = items?.filter(item => {
+    if (selectedCategory === "all") return true;
+    return item.category?.toLowerCase() === selectedCategory;
+  });
 
   const handleEdit = (item: Item) => {
     setEditingItem(item);
@@ -233,19 +241,33 @@ export default function Inventory() {
         />
       </header>
 
-      <div className="flex gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input 
-            placeholder="Search by name, SKU, or category..." 
-            className="pl-9 bg-background"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col gap-6 mb-6">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 max-w-sm w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input 
+              placeholder="Search by name, SKU, or category..." 
+              className="pl-9 bg-background"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex bg-muted p-1 rounded-lg w-full md:w-auto overflow-x-auto">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+                  selectedCategory === cat 
+                    ? "bg-background text-primary shadow-sm" 
+                    : "text-muted-foreground hover:text-primary"
+                }`}
+              >
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
-        <Button variant="outline" size="icon">
-          <Filter className="w-4 h-4" />
-        </Button>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
@@ -270,14 +292,14 @@ export default function Inventory() {
                     Loading catalog...
                   </TableCell>
                 </TableRow>
-              ) : items?.length === 0 ? (
+              ) : filteredItems?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                    No items found. Try a different search.
+                    No items found. Try a different search or category.
                   </TableCell>
                 </TableRow>
               ) : (
-                items?.map((item) => (
+                filteredItems?.map((item) => (
                   <TableRow key={item.id} className="hover:bg-muted/30 transition-colors cursor-pointer group">
                     <TableCell>
                       <div className="w-12 h-12 rounded bg-secondary overflow-hidden flex items-center justify-center">
