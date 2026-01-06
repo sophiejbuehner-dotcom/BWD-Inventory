@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive, MoreVertical } from "lucide-react";
+import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive, MoreVertical, Edit2 } from "lucide-react";
 import Papa from "papaparse";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,6 +42,9 @@ export default function ProjectDetails() {
   const [itemQuantity, setItemQuantity] = useState(1);
   const [debouncedSku, setDebouncedSku] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [editingProjectItem, setEditingProjectItem] = useState<{ id: number, quantity: number, notes: string | null, item: { name: string, sku: string, quantity: number } } | null>(null);
+  const [editQuantity, setEditQuantity] = useState(1);
+  const [editNotes, setEditNotes] = useState("");
   
   // Debounce SKU input for query
   useEffect(() => {
@@ -138,6 +141,20 @@ export default function ProjectDetails() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleUpdateItem = async () => {
+    if (!editingProjectItem) return;
+    try {
+      await updateMutation.mutateAsync({ 
+        itemId: editingProjectItem.id, 
+        updates: { quantity: editQuantity, notes: editNotes } 
+      });
+      toast({ title: "Item Updated" });
+      setEditingProjectItem(null);
+    } catch (error) {
+      toast({ title: "Update Failed", variant: "destructive" });
+    }
   };
 
   const calculateTotal = () => {
@@ -353,10 +370,14 @@ export default function ProjectDetails() {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(pi.id)}
+                      className="text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        setEditingProjectItem(pi);
+                        setEditQuantity(pi.quantity);
+                        setEditNotes(pi.notes || "");
+                      }}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Edit2 className="w-4 h-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -365,6 +386,59 @@ export default function ProjectDetails() {
           </TableBody>
         </Table>
       </div>
+      {/* Edit Project Item Modal */}
+      <Dialog open={!!editingProjectItem} onOpenChange={(open) => !open && setEditingProjectItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Item Details</DialogTitle>
+            <DialogDescription>Update quantity or remove from project.</DialogDescription>
+          </DialogHeader>
+          {editingProjectItem && (
+            <div className="space-y-4 py-4">
+              <div>
+                <h3 className="font-bold">{editingProjectItem.item.name}</h3>
+                <p className="text-sm text-muted-foreground font-mono">{editingProjectItem.item.sku}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantity</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={editQuantity}
+                  onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Notes</label>
+                <Input
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Add notes..."
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex justify-between sm:justify-between w-full">
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if (editingProjectItem) {
+                  handleDelete(editingProjectItem.id);
+                  setEditingProjectItem(null);
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Remove
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditingProjectItem(null)}>Cancel</Button>
+              <Button onClick={handleUpdateItem} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

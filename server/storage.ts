@@ -120,25 +120,37 @@ export class DatabaseStorage implements IStorage {
 
   async updateProjectItem(id: number, updates: Partial<InsertProjectItem>): Promise<ProjectItem> {
     const [existing] = await db.select().from(projectItems).where(eq(projectItems.id, id));
+    if (!existing) throw new Error("Project item not found");
+
     const [updated] = await db.update(projectItems)
       .set(updates)
       .where(eq(projectItems.id, id))
       .returning();
 
-    // If status changed to returned, add back to inventory
-    if (existing && updates.status === 'returned' && existing.status !== 'returned') {
-      const [masterItem] = await db.select().from(items).where(eq(items.id, existing.itemId));
-      if (masterItem) {
-        await db.update(items)
-          .set({ quantity: masterItem.quantity + existing.quantity })
-          .where(eq(items.id, existing.itemId));
+    const [masterItem] = await db.select().from(items).where(eq(items.id, existing.itemId));
+    if (masterItem) {
+      // Handle Quantity Changes
+      if (updates.quantity !== undefined && updates.quantity !== existing.quantity) {
+        // If status is returned, quantity doesn't affect stock (it's already in stock)
+        // If status is NOT returned, we need to adjust stock
+        if (existing.status !== 'returned' && (updates.status === undefined || updates.status !== 'returned')) {
+          const diff = updates.quantity - existing.quantity;
+          await db.update(items)
+            .set({ quantity: Math.max(0, masterItem.quantity - diff) })
+            .where(eq(items.id, existing.itemId));
+        }
       }
-    } else if (existing && updates.status !== 'returned' && existing.status === 'returned') {
-      // If changed FROM returned to something else, subtract again
-      const [masterItem] = await db.select().from(items).where(eq(items.id, existing.itemId));
-      if (masterItem) {
+
+      // Handle Status Changes (Returned logic)
+      if (updates.status === 'returned' && existing.status !== 'returned') {
+        // Just returned: Add back current quantity to stock
         await db.update(items)
-          .set({ quantity: Math.max(0, masterItem.quantity - existing.quantity) })
+          .set({ quantity: masterItem.quantity + (updates.quantity ?? existing.quantity) })
+          .where(eq(items.id, existing.itemId));
+      } else if (updates.status !== 'returned' && existing.status === 'returned' && updates.status !== undefined) {
+        // Re-pulled: Subtract current quantity from stock
+        await db.update(items)
+          .set({ quantity: Math.max(0, masterItem.quantity - (updates.quantity ?? existing.quantity)) })
           .where(eq(items.id, existing.itemId));
       }
     }
