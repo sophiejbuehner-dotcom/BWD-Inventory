@@ -21,6 +21,7 @@ export interface IStorage {
   getProject(id: number): Promise<ProjectWithItemsResponse | undefined>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, updates: Partial<InsertProject>): Promise<Project>;
+  deleteProject(id: number): Promise<void>;
 
   // Project Items
   addProjectItem(projectItem: InsertProjectItem): Promise<ProjectItem>;
@@ -92,6 +93,12 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!updated) throw new Error("Project not found");
     return updated;
+  }
+
+  async deleteProject(id: number): Promise<void> {
+    // Delete related project items first
+    await db.delete(projectItems).where(eq(projectItems.projectId, id));
+    await db.delete(projects).where(eq(projects.id, id));
   }
 
   // Project Items

@@ -1,6 +1,6 @@
 import { Layout } from "@/components/Layout";
-import { useParams, Link } from "wouter";
-import { useProject, useUpdateProject } from "@/hooks/use-projects";
+import { useParams, Link, useLocation } from "wouter";
+import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
 import { useItemBySku } from "@/hooks/use-items";
 import { useAddProjectItem, useUpdateProjectItem, useDeleteProjectItem } from "@/hooks/use-project-items";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,14 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive } from "lucide-react";
+import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive, MoreVertical } from "lucide-react";
 import Papa from "papaparse";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,9 +28,11 @@ export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   
   const { data: project, isLoading: projectLoading } = useProject(projectId);
   const updateProjectMutation = useUpdateProject(projectId);
+  const deleteProjectMutation = useDeleteProject();
   const addMutation = useAddProjectItem(projectId);
   const updateMutation = useUpdateProjectItem(projectId);
   const deleteMutation = useDeleteProjectItem(projectId);
@@ -68,6 +76,18 @@ export default function ProjectDetails() {
         toast({ title: "Project Archived" });
       } catch (error) {
         toast({ title: "Error", description: "Failed to archive project.", variant: "destructive" });
+      }
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (confirm("DANGER: Are you sure you want to PERMANENTLY DELETE this project and all its pull list items? This cannot be undone.")) {
+      try {
+        await deleteProjectMutation.mutateAsync(projectId);
+        toast({ title: "Project Deleted" });
+        setLocation("/projects");
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to delete project.", variant: "destructive" });
       }
     }
   };
@@ -139,14 +159,23 @@ export default function ProjectDetails() {
            <Button variant="outline" onClick={exportCSV}>
              <Download className="w-4 h-4 mr-2" /> Export CSV
            </Button>
-           {project.status !== 'archived' && (
-             <Button variant="outline" className="text-muted-foreground hover:text-destructive" onClick={handleArchiveProject}>
-               <Archive className="w-4 h-4 mr-2" /> Archive Project
-             </Button>
-           )}
-           <Button variant="default" className="bg-primary text-primary-foreground">
-             Edit Project
-           </Button>
+           <DropdownMenu>
+             <DropdownMenuTrigger asChild>
+               <Button variant="default" className="bg-primary text-primary-foreground">
+                 Edit Project <MoreVertical className="ml-2 w-4 h-4" />
+               </Button>
+             </DropdownMenuTrigger>
+             <DropdownMenuContent align="end">
+               {project.status !== 'archived' && (
+                 <DropdownMenuItem onClick={handleArchiveProject}>
+                   <Archive className="w-4 h-4 mr-2" /> Archive Project
+                 </DropdownMenuItem>
+               )}
+               <DropdownMenuItem onClick={handleDeleteProject} className="text-destructive focus:text-destructive">
+                 <Trash2 className="w-4 h-4 mr-2" /> Delete Project
+               </DropdownMenuItem>
+             </DropdownMenuContent>
+           </DropdownMenu>
         </div>
       </header>
 

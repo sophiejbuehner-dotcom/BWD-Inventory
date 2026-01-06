@@ -90,6 +90,11 @@ export async function registerRoutes(
     }
   });
 
+  app.delete(api.projects.delete.path, async (req, res) => {
+    await storage.deleteProject(Number(req.params.id));
+    res.status(204).send();
+  });
+
   // === Project Items ===
   app.post(api.projectItems.add.path, async (req, res) => {
     try {
