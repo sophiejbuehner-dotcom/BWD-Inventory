@@ -20,11 +20,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
       <div className="p-6">
         <h1 className="text-2xl font-display font-bold text-sidebar-foreground">
-          Aesthetix<span className="text-primary/60">.</span>
+          Inventory Systems
         </h1>
-        <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1 font-medium">
-          Interior Systems
-        </p>
       </div>
       
       <nav className="flex-1 px-4 space-y-2">
