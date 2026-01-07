@@ -1,7 +1,8 @@
 import { Layout } from "@/components/Layout";
-import { useItems, useCreateItem, useUpdateItem } from "@/hooks/use-items";
+import { useItems, useCreateItem, useUpdateItem, useItemProjectAssignments } from "@/hooks/use-items";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
@@ -13,8 +14,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertItemSchema, type InsertItem, type Item } from "@shared/schema";
 import { useState, useEffect } from "react";
-import { Search, Plus, PackageOpen, Filter, Edit2 } from "lucide-react";
+import { Search, Plus, PackageOpen, Edit2, ChevronDown, ChevronUp, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 // Helper to coerce number strings
 const formSchema = insertItemSchema.extend({
@@ -183,6 +185,89 @@ function ItemDialog({
   );
 }
 
+function InventoryRow({ item, onEdit }: { item: Item; onEdit: (item: Item) => void }) {
+  const { data: assignments } = useItemProjectAssignments(item.id);
+  const [expanded, setExpanded] = useState(false);
+
+  const hasAssignments = assignments && assignments.length > 0;
+
+  return (
+    <TableRow className="hover:bg-muted/30 transition-colors group" data-testid={`inventory-row-${item.id}`}>
+      <TableCell>
+        <div className="w-12 h-12 rounded bg-secondary overflow-hidden flex items-center justify-center">
+          {item.imageUrl ? (
+            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+          ) : (
+            <PackageOpen className="w-6 h-6 text-muted-foreground/50" />
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="font-medium text-foreground">{item.name}</TableCell>
+      <TableCell>{item.category}</TableCell>
+      <TableCell>{item.vendor}</TableCell>
+      <TableCell className="text-right">{item.quantity}</TableCell>
+      <TableCell>
+        {hasAssignments ? (
+          <div className="space-y-1">
+            {assignments.slice(0, expanded ? undefined : 2).map((a, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-sm">
+                <Badge variant="secondary" className="text-xs">
+                  {a.status === 'pulled' ? 'Pulled' : 'Installed'}
+                </Badge>
+                <span className="text-foreground font-medium">{a.projectName}</span>
+                <span className="text-muted-foreground">x{a.quantity}</span>
+                {a.addedAt && (
+                  <span className="text-muted-foreground text-xs flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {format(new Date(a.addedAt), "MMM d")}
+                  </span>
+                )}
+              </div>
+            ))}
+            {assignments.length > 2 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpanded(!expanded);
+                }}
+                className="text-xs text-primary flex items-center gap-1"
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="w-3 h-3" /> Show less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-3 h-3" /> +{assignments.length - 2} more
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">-</span>
+        )}
+      </TableCell>
+      <TableCell className="text-right font-mono">${item.price}</TableCell>
+      <TableCell className="text-right font-mono">${item.bwdPrice}</TableCell>
+      <TableCell>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(item);
+          }}
+          data-testid={`button-edit-item-${item.id}`}
+        >
+          <Edit2 className="w-4 h-4" />
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export default function Inventory() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -266,7 +351,8 @@ export default function Inventory() {
                 <TableHead>Item</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Vendor</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
+                <TableHead className="text-right">In Stock</TableHead>
+                <TableHead>Pulled For</TableHead>
                 <TableHead className="text-right">Client Price</TableHead>
                 <TableHead className="text-right">BWD Price</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
@@ -275,48 +361,19 @@ export default function Inventory() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                     Loading catalog...
                   </TableCell>
                 </TableRow>
               ) : filteredItems?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                     No items found. Try a different search or category.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredItems?.map((item) => (
-                  <TableRow key={item.id} className="hover:bg-muted/30 transition-colors cursor-pointer group">
-                    <TableCell>
-                      <div className="w-12 h-12 rounded bg-secondary overflow-hidden flex items-center justify-center">
-                        {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <PackageOpen className="w-6 h-6 text-muted-foreground/50" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium text-foreground">{item.name}</TableCell>
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.vendor}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right font-mono">${item.price}</TableCell>
-                    <TableCell className="text-right font-mono">${item.bwdPrice}</TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(item);
-                        }}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  <InventoryRow key={item.id} item={item} onEdit={handleEdit} />
                 ))
               )}
           </TableBody>

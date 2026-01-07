@@ -64,3 +64,16 @@ export function useUpdateItem(id: number) {
     },
   });
 }
+
+export function useItemProjectAssignments(itemId: number) {
+  return useQuery({
+    queryKey: [api.items.getProjectAssignments.path, itemId],
+    queryFn: async () => {
+      const url = buildUrl(api.items.getProjectAssignments.path, { id: itemId });
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch project assignments");
+      return api.items.getProjectAssignments.responses[200].parse(await res.json());
+    },
+    enabled: itemId > 0,
+  });
+}

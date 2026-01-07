@@ -26,6 +26,7 @@ export interface IStorage {
   addProjectItem(projectItem: InsertProjectItem): Promise<ProjectItem>;
   updateProjectItem(id: number, updates: Partial<InsertProjectItem>): Promise<ProjectItem>;
   deleteProjectItem(id: number): Promise<void>;
+  getActiveProjectItemsForItem(itemId: number): Promise<Array<{ projectName: string; quantity: number; status: string; addedAt: Date | null }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -170,6 +171,24 @@ export class DatabaseStorage implements IStorage {
       }
     }
     await db.delete(projectItems).where(eq(projectItems.id, id));
+  }
+
+  async getActiveProjectItemsForItem(itemId: number): Promise<Array<{ projectName: string; quantity: number; status: string; addedAt: Date | null }>> {
+    const results = await db.query.projectItems.findMany({
+      where: eq(projectItems.itemId, itemId),
+      with: {
+        project: true
+      }
+    });
+    
+    return results
+      .filter(pi => pi.status !== 'returned')
+      .map(pi => ({
+        projectName: pi.project.name,
+        quantity: pi.quantity,
+        status: pi.status,
+        addedAt: pi.addedAt
+      }));
   }
 }
 

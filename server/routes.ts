@@ -42,6 +42,14 @@ export async function registerRoutes(
     }
   });
 
+  app.get(api.items.getProjectAssignments.path, async (req, res) => {
+    const assignments = await storage.getActiveProjectItemsForItem(Number(req.params.id));
+    res.json(assignments.map(a => ({
+      ...a,
+      addedAt: a.addedAt ? a.addedAt.toISOString() : null
+    })));
+  });
+
   // === Projects ===
   app.get(api.projects.list.path, async (req, res) => {
     const projects = await storage.getProjects();

@@ -21,7 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive, MoreVertical, Edit2, Check } from "lucide-react";
+import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive, MoreVertical, Edit2, Check, Calendar } from "lucide-react";
+import { format } from "date-fns";
 import Papa from "papaparse";
 import { useToast } from "@/hooks/use-toast";
 import type { Item } from "@shared/schema";
@@ -370,6 +371,7 @@ export default function ProjectDetails() {
               <TableHead>Vendor</TableHead>
               <TableHead className="text-center">Qty</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Pulled Date</TableHead>
               <TableHead className="text-right">Client Price</TableHead>
               <TableHead className="text-right">BWD Price</TableHead>
               <TableHead className="w-[100px]"></TableHead>
@@ -378,7 +380,7 @@ export default function ProjectDetails() {
           <TableBody>
             {project.items?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                   No items in this project yet. Click "Add Item to Project" to start.
                 </TableCell>
               </TableRow>
@@ -421,6 +423,16 @@ export default function ProjectDetails() {
                         <SelectItem value="returned">Returned</SelectItem>
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    {pi.addedAt ? (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Calendar className="w-3 h-3" />
+                        {format(new Date(pi.addedAt), "MMM d, yyyy")}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-mono">${pi.item.price}</TableCell>
                   <TableCell className="text-right font-mono text-muted-foreground">${pi.item.bwdPrice || '0.00'}</TableCell>

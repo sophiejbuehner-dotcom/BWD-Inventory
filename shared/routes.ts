@@ -51,6 +51,18 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    getProjectAssignments: {
+      method: 'GET' as const,
+      path: '/api/items/:id/projects',
+      responses: {
+        200: z.array(z.object({
+          projectName: z.string(),
+          quantity: z.number(),
+          status: z.string(),
+          addedAt: z.string().nullable(),
+        })),
+      },
+    },
   },
   projects: {
     list: {
