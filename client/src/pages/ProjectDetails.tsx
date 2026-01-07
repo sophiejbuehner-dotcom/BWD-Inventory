@@ -303,40 +303,51 @@ export default function ProjectDetails() {
                 </div>
               ) : (
                 <div className="p-2">
-                  {filteredItems?.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => handleSelectItem(item)}
-                      className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
-                        selectedItem?.id === item.id
-                          ? "bg-primary/10 border border-primary"
-                          : "hover:bg-muted"
-                      }`}
-                      data-testid={`item-row-${item.id}`}
-                    >
-                      <div className="w-12 h-12 rounded bg-muted overflow-hidden flex-shrink-0 flex items-center justify-center">
-                        {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <PackageOpen className="w-6 h-6 text-muted-foreground/50" />
+                  {filteredItems?.map((item) => {
+                    const isUnavailable = item.quantity <= 0;
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => !isUnavailable && handleSelectItem(item)}
+                        className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+                          isUnavailable
+                            ? "opacity-50 cursor-not-allowed"
+                            : selectedItem?.id === item.id
+                              ? "bg-primary/10 border border-primary cursor-pointer"
+                              : "hover:bg-muted cursor-pointer"
+                        }`}
+                        data-testid={`item-row-${item.id}`}
+                      >
+                        <div className="w-12 h-12 rounded bg-muted overflow-hidden flex-shrink-0 flex items-center justify-center">
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <PackageOpen className="w-6 h-6 text-muted-foreground/50" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{item.name}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                            <Badge variant="secondary" className="text-xs">{item.category}</Badge>
+                            <span>{item.vendor}</span>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-mono font-medium">${item.price}</div>
+                          {isUnavailable ? (
+                            <Badge variant="outline" className="text-xs text-destructive border-destructive">
+                              Unavailable
+                            </Badge>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">Available: {item.quantity}</div>
+                          )}
+                        </div>
+                        {selectedItem?.id === item.id && !isUnavailable && (
+                          <Check className="w-5 h-5 text-primary flex-shrink-0" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{item.name}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-                          <Badge variant="secondary" className="text-xs">{item.category}</Badge>
-                          <span>{item.vendor}</span>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="font-mono font-medium">${item.price}</div>
-                        <div className="text-sm text-muted-foreground">Qty: {item.quantity}</div>
-                      </div>
-                      {selectedItem?.id === item.id && (
-                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>
@@ -346,15 +357,22 @@ export default function ProjectDetails() {
               <div className="bg-muted/50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="flex-1">
                   <div className="font-medium">{selectedItem.name}</div>
-                  <div className="text-sm text-muted-foreground">{selectedItem.vendor} - ${selectedItem.price}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {selectedItem.vendor} - ${selectedItem.price}
+                    <span className="ml-2 text-xs">({selectedItem.quantity} available)</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="text-sm font-medium">Quantity:</label>
                   <Input
                     type="number"
                     min="1"
+                    max={selectedItem.quantity}
                     value={itemQuantity}
-                    onChange={(e) => setItemQuantity(parseInt(e.target.value) || 1)}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setItemQuantity(Math.min(val, selectedItem.quantity));
+                    }}
                     className="w-20"
                     data-testid="input-quantity"
                   />
