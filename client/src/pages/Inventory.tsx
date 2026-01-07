@@ -13,10 +13,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertItemSchema, type InsertItem, type Item } from "@shared/schema";
-import { useState, useEffect } from "react";
-import { Search, Plus, PackageOpen, Edit2, ChevronDown, ChevronUp, Calendar } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Plus, PackageOpen, Edit2, ChevronDown, ChevronUp, Calendar, Upload, X, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useUpload } from "@/hooks/use-upload";
 
 // Helper to coerce number strings
 const formSchema = insertItemSchema.extend({
@@ -37,6 +38,16 @@ function ItemDialog({
   const { toast } = useToast();
   const createMutation = useCreateItem();
   const updateMutation = useUpdateItem(item?.id || 0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFile, isUploading, progress } = useUpload({
+    onSuccess: (response) => {
+      form.setValue("imageUrl", response.objectPath);
+      toast({ title: "Image Uploaded", description: "Photo uploaded successfully." });
+    },
+    onError: (error) => {
+      toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+    },
+  });
 
   const form = useForm<InsertItem>({
     resolver: zodResolver(formSchema),
@@ -52,6 +63,19 @@ function ItemDialog({
       quantity: 0,
     },
   });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({ title: "Invalid File", description: "Please select an image file.", variant: "destructive" });
+        return;
+      }
+      await uploadFile(file);
+    }
+  };
+
+  const currentImageUrl = form.watch("imageUrl");
 
   useEffect(() => {
     if (item) {
@@ -166,8 +190,61 @@ function ItemDialog({
             
             <FormField control={form.control} name="imageUrl" render={({ field }) => (
               <FormItem>
-                <FormLabel>Image URL (Optional)</FormLabel>
-                <FormControl><Input placeholder="https://..." {...field} value={field.value || ''} /></FormControl>
+                <FormLabel>Photo (Optional)</FormLabel>
+                <FormControl>
+                  <div className="space-y-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      data-testid="input-item-image"
+                    />
+                    
+                    {currentImageUrl ? (
+                      <div className="relative w-32 h-32 rounded-md overflow-hidden border">
+                        <img 
+                          src={currentImageUrl.startsWith('/objects/') ? currentImageUrl : currentImageUrl} 
+                          alt="Item preview" 
+                          className="w-full h-full object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="absolute top-1 right-1"
+                          onClick={() => form.setValue("imageUrl", "")}
+                          data-testid="button-remove-image"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-24 border-dashed flex flex-col gap-2"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        data-testid="button-upload-image"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Upload className="w-6 h-6 animate-pulse" />
+                            <span className="text-sm">Uploading... {progress}%</span>
+                          </>
+                        ) : (
+                          <>
+                            <Image className="w-6 h-6" />
+                            <span className="text-sm">Tap to upload photo</span>
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
