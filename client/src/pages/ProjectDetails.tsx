@@ -55,7 +55,21 @@ export default function ProjectDetails() {
   // Fetch all items for the add dialog
   const { data: allItems, isLoading: itemsLoading } = useItems();
 
-  const categories = ["all", ...new Set(allItems?.map(item => item.category?.toLowerCase()) || [])];
+  const categories = [
+    "all",
+    "Found/Wood Accessories",
+    "Furniture",
+    "Hardware",
+    "Lighting",
+    "Pillows/Bedding",
+    "Plants",
+    "Rugs",
+    "BBH Misc",
+    "Stoneware/Ceramics",
+    "Woven Baskets",
+    "Wallpaper",
+    "Fabric"
+  ];
   
   const filteredItems = allItems?.filter(item => {
     const matchesSearch = searchTerm === "" || 
@@ -64,7 +78,7 @@ export default function ProjectDetails() {
       item.vendor?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = selectedCategory === "all" || 
-      item.category?.toLowerCase() === selectedCategory;
+      item.category?.toLowerCase() === selectedCategory.toLowerCase();
     
     return matchesSearch && matchesCategory;
   });

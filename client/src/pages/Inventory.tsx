@@ -270,16 +270,30 @@ function InventoryRow({ item, onEdit }: { item: Item; onEdit: (item: Item) => vo
 
 export default function Inventory() {
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const { data: items, isLoading } = useItems(search);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | undefined>(undefined);
 
-  const categories = ["all", "art", "ceramics", "fenway", "kitchen", "bathroom"];
+  const categories = [
+    "All",
+    "Found/Wood Accessories",
+    "Furniture",
+    "Hardware",
+    "Lighting",
+    "Pillows/Bedding",
+    "Plants",
+    "Rugs",
+    "BBH Misc",
+    "Stoneware/Ceramics",
+    "Woven Baskets",
+    "Wallpaper",
+    "Fabric"
+  ];
 
   const filteredItems = items?.filter(item => {
-    if (selectedCategory === "all") return true;
-    return item.category?.toLowerCase() === selectedCategory;
+    if (selectedCategory === "All") return true;
+    return item.category?.toLowerCase() === selectedCategory.toLowerCase();
   });
 
   const handleEdit = (item: Item) => {
@@ -330,13 +344,14 @@ export default function Inventory() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
                   selectedCategory === cat 
                     ? "bg-background text-primary shadow-sm" 
                     : "text-muted-foreground hover:text-primary"
                 }`}
+                data-testid={`tab-category-${cat.toLowerCase().replace(/[^a-z]/g, '-')}`}
               >
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                {cat}
               </button>
             ))}
           </div>
