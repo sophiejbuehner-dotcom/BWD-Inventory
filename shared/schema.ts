@@ -39,6 +39,23 @@ export const projectItems = pgTable("project_items", {
   addedAt: timestamp("added_at").defaultNow(),
 });
 
+// Expense Transactions for Audit of Goods
+export const expenses = pgTable("expenses", {
+  id: serial("id").primaryKey(),
+  description: text("description").notNull(),
+  vendor: text("vendor").notNull(),
+  category: text("category").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
+  purchaseDate: timestamp("purchase_date").notNull(),
+  invoiceNumber: text("invoice_number"),
+  notes: text("notes"),
+  itemId: integer("item_id").references(() => items.id), // Optional link to inventory item
+  projectId: integer("project_id").references(() => projects.id), // Optional link to project
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === RELATIONS ===
 export const projectRelations = relations(projects, ({ many }) => ({
   items: many(projectItems),
@@ -59,10 +76,22 @@ export const projectItemsRelations = relations(projectItems, ({ one }) => ({
   }),
 }));
 
+export const expenseRelations = relations(expenses, ({ one }) => ({
+  item: one(items, {
+    fields: [expenses.itemId],
+    references: [items.id],
+  }),
+  project: one(projects, {
+    fields: [expenses.projectId],
+    references: [projects.id],
+  }),
+}));
+
 // === BASE SCHEMAS ===
 export const insertItemSchema = createInsertSchema(items).omit({ id: true });
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true });
 export const insertProjectItemSchema = createInsertSchema(projectItems).omit({ id: true, addedAt: true });
+export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true, createdAt: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
@@ -75,6 +104,9 @@ export type InsertProject = z.infer<typeof insertProjectSchema>;
 
 export type ProjectItem = typeof projectItems.$inferSelect;
 export type InsertProjectItem = z.infer<typeof insertProjectItemSchema>;
+
+export type Expense = typeof expenses.$inferSelect;
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 
 // Request types
 export type CreateItemRequest = InsertItem;

@@ -138,6 +138,48 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // === Expenses ===
+  app.get(api.expenses.summary.path, async (req, res) => {
+    const summary = await storage.getExpenseSummary();
+    res.json(summary);
+  });
+
+  app.get(api.expenses.list.path, async (req, res) => {
+    const expenses = await storage.getExpenses();
+    res.json(expenses);
+  });
+
+  app.post(api.expenses.create.path, async (req, res) => {
+    try {
+      const input = api.expenses.create.input.parse(req.body);
+      const expense = await storage.createExpense(input);
+      res.status(201).json(expense);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      throw err;
+    }
+  });
+
+  app.patch(api.expenses.update.path, async (req, res) => {
+    try {
+      const input = api.expenses.update.input.parse(req.body);
+      const expense = await storage.updateExpense(Number(req.params.id), input);
+      res.json(expense);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(404).json({ message: "Expense not found" });
+    }
+  });
+
+  app.delete(api.expenses.delete.path, async (req, res) => {
+    await storage.deleteExpense(Number(req.params.id));
+    res.status(204).send();
+  });
+
   // Seed Data
   await seedDatabase();
 

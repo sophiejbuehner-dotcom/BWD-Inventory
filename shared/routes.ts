@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertItemSchema, insertProjectSchema, insertProjectItemSchema, items, projects, projectItems } from './schema';
+import { insertItemSchema, insertProjectSchema, insertProjectItemSchema, insertExpenseSchema, items, projects, projectItems, expenses } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -132,6 +132,52 @@ export const api = {
       responses: {
         204: z.void(),
         404: errorSchemas.notFound,
+      },
+    },
+  },
+  expenses: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/expenses',
+      responses: {
+        200: z.array(z.custom<typeof expenses.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/expenses',
+      input: insertExpenseSchema,
+      responses: {
+        201: z.custom<typeof expenses.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/expenses/:id',
+      input: insertExpenseSchema.partial(),
+      responses: {
+        200: z.custom<typeof expenses.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/expenses/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+    summary: {
+      method: 'GET' as const,
+      path: '/api/expenses/summary',
+      responses: {
+        200: z.object({
+          totalSpend: z.number(),
+          expenseCount: z.number(),
+          avgUnitCost: z.number(),
+        }),
       },
     },
   },

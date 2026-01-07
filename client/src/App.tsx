@@ -8,6 +8,7 @@ import Dashboard from "@/pages/Dashboard";
 import ProjectDetails from "@/pages/ProjectDetails";
 import ProjectsList from "@/pages/ProjectsList";
 import Inventory from "@/pages/Inventory";
+import Audit from "@/pages/Audit";
 
 function Router() {
   return (
@@ -16,7 +17,7 @@ function Router() {
       <Route path="/projects" component={ProjectsList} />
       <Route path="/projects/:id" component={ProjectDetails} />
       <Route path="/inventory" component={Inventory} />
-      {/* Settings page could be added here later */}
+      <Route path="/audit" component={Audit} />
       <Route component={NotFound} />
     </Switch>
   );

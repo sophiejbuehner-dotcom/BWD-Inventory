@@ -1,10 +1,11 @@
 import { db } from "./db";
 import {
-  items, projects, projectItems,
+  items, projects, projectItems, expenses,
   type Item, type InsertItem,
   type Project, type InsertProject,
   type ProjectItem, type InsertProjectItem,
-  type ProjectWithItemsResponse
+  type ProjectWithItemsResponse,
+  type Expense, type InsertExpense
 } from "@shared/schema";
 import { eq, ilike, desc, or } from "drizzle-orm";
 
@@ -27,6 +28,13 @@ export interface IStorage {
   updateProjectItem(id: number, updates: Partial<InsertProjectItem>): Promise<ProjectItem>;
   deleteProjectItem(id: number): Promise<void>;
   getActiveProjectItemsForItem(itemId: number): Promise<Array<{ projectName: string; quantity: number; status: string; addedAt: Date | null }>>;
+
+  // Expenses
+  getExpenses(): Promise<Expense[]>;
+  createExpense(expense: InsertExpense): Promise<Expense>;
+  updateExpense(id: number, updates: Partial<InsertExpense>): Promise<Expense>;
+  deleteExpense(id: number): Promise<void>;
+  getExpenseSummary(): Promise<{ totalSpend: number; expenseCount: number; avgUnitCost: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -189,6 +197,39 @@ export class DatabaseStorage implements IStorage {
         status: pi.status,
         addedAt: pi.addedAt
       }));
+  }
+
+  // Expenses
+  async getExpenses(): Promise<Expense[]> {
+    return await db.select().from(expenses).orderBy(desc(expenses.purchaseDate));
+  }
+
+  async createExpense(expense: InsertExpense): Promise<Expense> {
+    const [created] = await db.insert(expenses).values(expense).returning();
+    return created;
+  }
+
+  async updateExpense(id: number, updates: Partial<InsertExpense>): Promise<Expense> {
+    const [updated] = await db.update(expenses)
+      .set(updates)
+      .where(eq(expenses.id, id))
+      .returning();
+    if (!updated) throw new Error("Expense not found");
+    return updated;
+  }
+
+  async deleteExpense(id: number): Promise<void> {
+    await db.delete(expenses).where(eq(expenses.id, id));
+  }
+
+  async getExpenseSummary(): Promise<{ totalSpend: number; expenseCount: number; avgUnitCost: number }> {
+    const allExpenses = await db.select().from(expenses);
+    const totalSpend = allExpenses.reduce((sum, e) => sum + parseFloat(e.totalCost), 0);
+    const expenseCount = allExpenses.length;
+    const avgUnitCost = allExpenses.length > 0 
+      ? allExpenses.reduce((sum, e) => sum + parseFloat(e.unitCost), 0) / allExpenses.length 
+      : 0;
+    return { totalSpend, expenseCount, avgUnitCost };
   }
 }
 
