@@ -3,6 +3,7 @@ import { useItems, useCreateItem, useUpdateItem, useItemProjectAssignments } fro
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
@@ -18,6 +19,21 @@ import { Search, Plus, PackageOpen, Edit2, ChevronDown, ChevronUp, Calendar, Upl
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useUpload } from "@/hooks/use-upload";
+
+const CATEGORIES = [
+  "Found/Wood Accessories",
+  "Furniture",
+  "Hardware",
+  "Lighting",
+  "Pillows/Bedding",
+  "Plants",
+  "Rugs",
+  "BBH Misc",
+  "Stoneware/Ceramics",
+  "Woven Baskets",
+  "Wallpaper",
+  "Fabric"
+];
 
 // Helper to coerce number strings
 const formSchema = insertItemSchema.extend({
@@ -135,7 +151,18 @@ function ItemDialog({
             <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <FormControl><Input placeholder="Lighting" {...field} /></FormControl>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-item-category">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )} />
