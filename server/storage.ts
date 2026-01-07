@@ -6,13 +6,12 @@ import {
   type ProjectItem, type InsertProjectItem,
   type ProjectWithItemsResponse
 } from "@shared/schema";
-import { eq, like, desc } from "drizzle-orm";
+import { eq, ilike, desc, or } from "drizzle-orm";
 
 export interface IStorage {
   // Items
   getItems(search?: string): Promise<Item[]>;
   getItem(id: number): Promise<Item | undefined>;
-  getItemBySku(sku: string): Promise<Item | undefined>;
   createItem(item: InsertItem): Promise<Item>;
   updateItem(id: number, updates: Partial<InsertItem>): Promise<Item>;
 
@@ -33,18 +32,19 @@ export class DatabaseStorage implements IStorage {
   // Items
   async getItems(search?: string): Promise<Item[]> {
     if (search) {
-      return await db.select().from(items).where(like(items.name, `%${search}%`));
+      return await db.select().from(items).where(
+        or(
+          ilike(items.name, `%${search}%`),
+          ilike(items.category, `%${search}%`),
+          ilike(items.vendor, `%${search}%`)
+        )
+      ).orderBy(desc(items.id));
     }
     return await db.select().from(items).orderBy(desc(items.id));
   }
 
   async getItem(id: number): Promise<Item | undefined> {
     const [item] = await db.select().from(items).where(eq(items.id, id));
-    return item;
-  }
-
-  async getItemBySku(sku: string): Promise<Item | undefined> {
-    const [item] = await db.select().from(items).where(eq(items.sku, sku));
     return item;
   }
 

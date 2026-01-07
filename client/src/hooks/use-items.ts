@@ -17,23 +17,6 @@ export function useItems(search?: string) {
   });
 }
 
-export function useItemBySku(sku: string | null) {
-  return useQuery({
-    queryKey: [api.items.getBySku.path, sku],
-    queryFn: async () => {
-      if (!sku) return null;
-      const url = buildUrl(api.items.getBySku.path, { sku });
-      const res = await fetch(url, { credentials: "include" });
-      
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error("Failed to fetch item");
-      
-      return api.items.getBySku.responses[200].parse(await res.json());
-    },
-    enabled: !!sku && sku.length > 2, // Only fetch if SKU is provided and reasonable length
-  });
-}
-
 export function useCreateItem() {
   const queryClient = useQueryClient();
   return useMutation({

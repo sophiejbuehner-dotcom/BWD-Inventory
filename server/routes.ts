@@ -16,14 +16,6 @@ export async function registerRoutes(
     res.json(items);
   });
 
-  app.get(api.items.getBySku.path, async (req, res) => {
-    const item = await storage.getItemBySku(req.params.sku);
-    if (!item) {
-      return res.status(404).json({ message: "Item not found" });
-    }
-    res.json(item);
-  });
-
   app.post(api.items.create.path, async (req, res) => {
     try {
       const input = api.items.create.input.parse(req.body);
@@ -151,11 +143,11 @@ async function seedDatabase() {
     
     // Create Items
     const itemsData = [
-      { sku: "LMP-001", name: "Brass Table Lamp", vendor: "Arteriors", cost: "150.00", price: "285.00", bwdPrice: "210.00", category: "Lighting", description: "Modern brass table lamp with linen shade." },
-      { sku: "CHR-023", name: "Velvet Accent Chair", vendor: "Four Hands", cost: "450.00", price: "895.00", bwdPrice: "675.00", category: "Furniture", description: "Navy blue velvet chair with gold legs." },
-      { sku: "RUG-105", name: "Wool Area Rug 8x10", vendor: "Loloi", cost: "320.00", price: "650.00", bwdPrice: "490.00", category: "Decor", description: "Hand-tufted wool rug, neutral tones." },
-      { sku: "VAS-008", name: "Ceramic Vase Set", vendor: "Global Views", cost: "45.00", price: "95.00", bwdPrice: "75.00", category: "Accessories", description: "Set of 3 white ceramic vases." },
-      { sku: "TBL-012", name: "Marble Coffee Table", vendor: "Bernhardt", cost: "680.00", price: "1250.00", bwdPrice: "940.00", category: "Furniture", description: "Carrara marble top with iron base." },
+      { name: "Brass Table Lamp", vendor: "Arteriors", cost: "150.00", price: "285.00", bwdPrice: "210.00", category: "Lighting", description: "Modern brass table lamp with linen shade." },
+      { name: "Velvet Accent Chair", vendor: "Four Hands", cost: "450.00", price: "895.00", bwdPrice: "675.00", category: "Furniture", description: "Navy blue velvet chair with gold legs." },
+      { name: "Wool Area Rug 8x10", vendor: "Loloi", cost: "320.00", price: "650.00", bwdPrice: "490.00", category: "Decor", description: "Hand-tufted wool rug, neutral tones." },
+      { name: "Ceramic Vase Set", vendor: "Global Views", cost: "45.00", price: "95.00", bwdPrice: "75.00", category: "Accessories", description: "Set of 3 white ceramic vases." },
+      { name: "Marble Coffee Table", vendor: "Bernhardt", cost: "680.00", price: "1250.00", bwdPrice: "940.00", category: "Furniture", description: "Carrara marble top with iron base." },
     ];
 
     const createdItems = [];

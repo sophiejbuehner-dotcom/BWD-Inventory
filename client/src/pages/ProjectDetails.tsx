@@ -1,12 +1,13 @@
 import { Layout } from "@/components/Layout";
 import { useParams, Link, useLocation } from "wouter";
 import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
-import { useItemBySku } from "@/hooks/use-items";
+import { useItems } from "@/hooks/use-items";
 import { useAddProjectItem, useUpdateProjectItem, useDeleteProjectItem } from "@/hooks/use-project-items";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
@@ -19,10 +20,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState, useEffect } from "react";
-import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive, MoreVertical, Edit2 } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Search, Download, Trash2, Plus, Loader2, PackageOpen, Archive, MoreVertical, Edit2, Check } from "lucide-react";
 import Papa from "papaparse";
 import { useToast } from "@/hooks/use-toast";
+import type { Item } from "@shared/schema";
 
 export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
@@ -37,38 +39,50 @@ export default function ProjectDetails() {
   const updateMutation = useUpdateProjectItem(projectId);
   const deleteMutation = useDeleteProjectItem(projectId);
 
-  // Quick Add State
-  const [skuInput, setSkuInput] = useState("");
+  // Add Item Dialog State
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [itemQuantity, setItemQuantity] = useState(1);
-  const [debouncedSku, setDebouncedSku] = useState("");
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [editingProjectItem, setEditingProjectItem] = useState<{ id: number, quantity: number, notes: string | null, item: { name: string, sku: string, quantity: number } } | null>(null);
+  
+  // Edit Item Modal State
+  const [editingProjectItem, setEditingProjectItem] = useState<{ id: number, quantity: number, notes: string | null, item: { name: string, quantity: number } } | null>(null);
   const [editQuantity, setEditQuantity] = useState(1);
   const [editNotes, setEditNotes] = useState("");
+
+  // Fetch all items for the add dialog
+  const { data: allItems, isLoading: itemsLoading } = useItems();
+
+  const categories = ["all", ...new Set(allItems?.map(item => item.category?.toLowerCase()) || [])];
   
-  // Debounce SKU input for query
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSku(skuInput), 500);
-    return () => clearTimeout(timer);
-  }, [skuInput]);
+  const filteredItems = allItems?.filter(item => {
+    const matchesSearch = searchTerm === "" || 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.vendor?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = selectedCategory === "all" || 
+      item.category?.toLowerCase() === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
 
-  const { data: foundItem, isLoading: isSearching, isError: isSearchError } = useItemBySku(debouncedSku);
-
-  useEffect(() => {
-    if (foundItem && !showConfirmModal) {
-      setShowConfirmModal(true);
-    }
-  }, [foundItem]);
+  const handleSelectItem = (item: Item) => {
+    setSelectedItem(item);
+    setItemQuantity(1);
+  };
 
   const handleAddItem = async () => {
-    if (!foundItem) return;
+    if (!selectedItem) return;
     try {
-      await addMutation.mutateAsync({ itemId: foundItem.id, quantity: itemQuantity, status: "pulled" });
-      toast({ title: "Item Added", description: `${foundItem.name} added to project list.` });
-      setSkuInput("");
-      setDebouncedSku("");
+      await addMutation.mutateAsync({ itemId: selectedItem.id, quantity: itemQuantity, status: "pulled" });
+      toast({ title: "Item Added", description: `${selectedItem.name} added to project list.` });
+      setShowAddDialog(false);
+      setSelectedItem(null);
+      setSearchTerm("");
+      setSelectedCategory("all");
       setItemQuantity(1);
-      setShowConfirmModal(false);
     } catch (error) {
       toast({ title: "Error", description: "Failed to add item.", variant: "destructive" });
     }
@@ -120,7 +134,6 @@ export default function ProjectDetails() {
   const exportCSV = () => {
     if (!project?.items) return;
     const data = project.items.map(pi => ({
-      SKU: pi.item.sku,
       Name: pi.item.name,
       Category: pi.item.category,
       Vendor: pi.item.vendor,
@@ -190,22 +203,22 @@ export default function ProjectDetails() {
           </div>
         </div>
         <div className="flex gap-2">
-           <Button variant="outline" onClick={exportCSV}>
+           <Button variant="outline" onClick={exportCSV} data-testid="button-export-csv">
              <Download className="w-4 h-4 mr-2" /> Export CSV
            </Button>
            <DropdownMenu>
              <DropdownMenuTrigger asChild>
-               <Button variant="default" className="bg-primary text-primary-foreground">
+               <Button variant="default" className="bg-primary text-primary-foreground" data-testid="button-edit-project">
                  Edit Project <MoreVertical className="ml-2 w-4 h-4" />
                </Button>
              </DropdownMenuTrigger>
              <DropdownMenuContent align="end">
                {project.status !== 'archived' && (
-                 <DropdownMenuItem onClick={handleArchiveProject}>
+                 <DropdownMenuItem onClick={handleArchiveProject} data-testid="menu-archive-project">
                    <Archive className="w-4 h-4 mr-2" /> Archive Project
                  </DropdownMenuItem>
                )}
-               <DropdownMenuItem onClick={handleDeleteProject} className="text-destructive focus:text-destructive">
+               <DropdownMenuItem onClick={handleDeleteProject} className="text-destructive focus:text-destructive" data-testid="menu-delete-project">
                  <Trash2 className="w-4 h-4 mr-2" /> Delete Project
                </DropdownMenuItem>
              </DropdownMenuContent>
@@ -213,86 +226,131 @@ export default function ProjectDetails() {
         </div>
       </header>
 
-      {/* Quick Add Bar */}
-      <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-8">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
-            <Input 
-              placeholder="Scan or type SKU to add item..." 
-              className="pl-10 py-6 text-lg font-mono bg-background"
-              value={skuInput}
-              onChange={(e) => setSkuInput(e.target.value)}
-              autoFocus
-            />
-            {isSearching && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+      {/* Add Item Button */}
+      <div className="mb-8">
+        <Button size="lg" onClick={() => setShowAddDialog(true)} data-testid="button-add-item">
+          <Plus className="w-5 h-5 mr-2" /> Add Item to Project
+        </Button>
+      </div>
+
+      {/* Add Item Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        setShowAddDialog(open);
+        if (!open) {
+          setSelectedItem(null);
+          setSearchTerm("");
+          setSelectedCategory("all");
+        }
+      }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Add Item to Project</DialogTitle>
+            <DialogDescription>Search by name, category, or browse the inventory list.</DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-4 flex-1 overflow-hidden">
+            {/* Search and Filter */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input 
+                  placeholder="Search items..." 
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  data-testid="input-search-items"
+                />
+              </div>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat === "all" ? "All Categories" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Items List */}
+            <ScrollArea className="flex-1 border rounded-lg">
+              {itemsLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredItems?.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+                  <PackageOpen className="w-10 h-10 mb-2" />
+                  <p>No items found</p>
+                </div>
+              ) : (
+                <div className="p-2">
+                  {filteredItems?.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => handleSelectItem(item)}
+                      className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedItem?.id === item.id
+                          ? "bg-primary/10 border border-primary"
+                          : "hover:bg-muted"
+                      }`}
+                      data-testid={`item-row-${item.id}`}
+                    >
+                      <div className="w-12 h-12 rounded bg-muted overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <PackageOpen className="w-6 h-6 text-muted-foreground/50" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{item.name}</div>
+                        <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                          <Badge variant="secondary" className="text-xs">{item.category}</Badge>
+                          <span>{item.vendor}</span>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-mono font-medium">${item.price}</div>
+                        <div className="text-sm text-muted-foreground">Qty: {item.quantity}</div>
+                      </div>
+                      {selectedItem?.id === item.id && (
+                        <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+
+            {/* Selected Item Quantity */}
+            {selectedItem && (
+              <div className="bg-muted/50 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex-1">
+                  <div className="font-medium">{selectedItem.name}</div>
+                  <div className="text-sm text-muted-foreground">{selectedItem.vendor} - ${selectedItem.price}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium">Quantity:</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={itemQuantity}
+                    onChange={(e) => setItemQuantity(parseInt(e.target.value) || 1)}
+                    className="w-20"
+                    data-testid="input-quantity"
+                  />
+                </div>
               </div>
             )}
           </div>
-          <div className="text-sm text-muted-foreground hidden md:block">
-            Press Enter or scan barcode
-          </div>
-        </div>
-        {isSearchError && skuInput.length > 2 && (
-          <p className="text-red-500 text-sm mt-2 ml-2">Item not found with SKU: {skuInput}</p>
-        )}
-      </div>
 
-      {/* Confirmation Modal for Quick Add */}
-      <Dialog open={showConfirmModal} onOpenChange={(open) => {
-        setShowConfirmModal(open);
-        if (!open) setSkuInput(""); 
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Item to Project?</DialogTitle>
-            <DialogDescription>Confirm adding this item to the pull list.</DialogDescription>
-          </DialogHeader>
-          {foundItem && (
-            <div className="flex flex-col gap-6 py-4">
-              <div className="flex gap-4">
-                <div className="w-24 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                  {foundItem.imageUrl ? (
-                    <img src={foundItem.imageUrl} alt={foundItem.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <PackageOpen className="w-10 h-10 m-auto text-muted-foreground" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">{foundItem.name}</h3>
-                  <p className="text-sm text-muted-foreground font-mono">{foundItem.sku}</p>
-                  <div className="mt-2 text-sm">
-                    <span className="font-medium">Vendor:</span> {foundItem.vendor}
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-medium">In Stock:</span> {foundItem.quantity}
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-medium">Price:</span> ${foundItem.price}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Quantity to Pull</label>
-                <Input
-                  type="number"
-                  min="1"
-                  max={foundItem.quantity}
-                  value={itemQuantity}
-                  onChange={(e) => setItemQuantity(parseInt(e.target.value) || 1)}
-                />
-                {itemQuantity > foundItem.quantity && (
-                  <p className="text-sm text-destructive">Warning: Requested quantity exceeds stock.</p>
-                )}
-              </div>
-            </div>
-          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmModal(false)}>Cancel</Button>
-            <Button onClick={handleAddItem} disabled={addMutation.isPending}>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)} data-testid="button-cancel-add">Cancel</Button>
+            <Button onClick={handleAddItem} disabled={!selectedItem || addMutation.isPending} data-testid="button-confirm-add">
               {addMutation.isPending ? "Adding..." : "Add to Project"}
             </Button>
           </DialogFooter>
@@ -320,13 +378,13 @@ export default function ProjectDetails() {
           <TableBody>
             {project.items?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                  No items in this project yet. Scan a SKU above to start.
+                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                  No items in this project yet. Click "Add Item to Project" to start.
                 </TableCell>
               </TableRow>
             ) : (
               project.items.map((pi) => (
-                <TableRow key={pi.id}>
+                <TableRow key={pi.id} data-testid={`project-item-${pi.id}`}>
                   <TableCell>
                     <div className="w-12 h-12 rounded bg-muted overflow-hidden flex items-center justify-center">
                       {pi.item.imageUrl ? (
@@ -339,7 +397,7 @@ export default function ProjectDetails() {
                   <TableCell>
                     <div>
                       <div className="font-medium">{pi.item.name}</div>
-                      <div className="text-xs text-muted-foreground font-mono">{pi.item.sku}</div>
+                      <div className="text-xs text-muted-foreground">{pi.item.category}</div>
                     </div>
                   </TableCell>
                   <TableCell>{pi.item.vendor}</TableCell>
@@ -350,11 +408,11 @@ export default function ProjectDetails() {
                       onValueChange={(val) => handleStatusChange(pi.id, val)}
                     >
                       <SelectTrigger className={`w-[130px] h-8 border-none font-medium ${
-                        pi.status === 'pulled' ? 'bg-blue-100 text-blue-700' :
-                        pi.status === 'installed' ? 'bg-green-100 text-green-700' :
-                        pi.status === 'returned' ? 'bg-red-100 text-red-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
+                        pi.status === 'pulled' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                        pi.status === 'installed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        pi.status === 'returned' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                        'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                      }`} data-testid={`status-select-${pi.id}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -376,6 +434,7 @@ export default function ProjectDetails() {
                         setEditQuantity(pi.quantity);
                         setEditNotes(pi.notes || "");
                       }}
+                      data-testid={`button-edit-${pi.id}`}
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
@@ -386,6 +445,7 @@ export default function ProjectDetails() {
           </TableBody>
         </Table>
       </div>
+
       {/* Edit Project Item Modal */}
       <Dialog open={!!editingProjectItem} onOpenChange={(open) => !open && setEditingProjectItem(null)}>
         <DialogContent>
@@ -397,7 +457,6 @@ export default function ProjectDetails() {
             <div className="space-y-4 py-4">
               <div>
                 <h3 className="font-bold">{editingProjectItem.item.name}</h3>
-                <p className="text-sm text-muted-foreground font-mono">{editingProjectItem.item.sku}</p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Quantity</label>
@@ -406,6 +465,7 @@ export default function ProjectDetails() {
                   min="1"
                   value={editQuantity}
                   onChange={(e) => setEditQuantity(parseInt(e.target.value) || 1)}
+                  data-testid="input-edit-quantity"
                 />
               </div>
               <div className="space-y-2">
@@ -414,6 +474,7 @@ export default function ProjectDetails() {
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                   placeholder="Add notes..."
+                  data-testid="input-edit-notes"
                 />
               </div>
             </div>
@@ -427,12 +488,13 @@ export default function ProjectDetails() {
                   setEditingProjectItem(null);
                 }
               }}
+              data-testid="button-remove-item"
             >
               <Trash2 className="w-4 h-4 mr-2" /> Remove
             </Button>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setEditingProjectItem(null)}>Cancel</Button>
-              <Button onClick={handleUpdateItem} disabled={updateMutation.isPending}>
+              <Button variant="outline" onClick={() => setEditingProjectItem(null)} data-testid="button-cancel-edit">Cancel</Button>
+              <Button onClick={handleUpdateItem} disabled={updateMutation.isPending} data-testid="button-save-edit">
                 {updateMutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </div>

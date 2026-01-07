@@ -8,7 +8,6 @@ import { z } from "zod";
 // Master Inventory Catalog
 export const items = pgTable("items", {
   id: serial("id").primaryKey(),
-  sku: text("sku").notNull().unique(),
   name: text("name").notNull(),
   vendor: text("vendor").notNull(),
   cost: decimal("cost", { precision: 10, scale: 2 }).notNull(),

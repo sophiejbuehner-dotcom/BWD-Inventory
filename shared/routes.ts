@@ -32,14 +32,6 @@ export const api = {
         200: z.array(z.custom<typeof items.$inferSelect>()),
       },
     },
-    getBySku: {
-      method: 'GET' as const,
-      path: '/api/items/sku/:sku',
-      responses: {
-        200: z.custom<typeof items.$inferSelect>(),
-        404: errorSchemas.notFound,
-      },
-    },
     create: {
       method: 'POST' as const,
       path: '/api/items',

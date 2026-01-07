@@ -39,7 +39,6 @@ function ItemDialog({
   const form = useForm<InsertItem>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      sku: "",
       name: "",
       vendor: "",
       cost: "0",
@@ -55,7 +54,6 @@ function ItemDialog({
   useEffect(() => {
     if (item) {
       form.reset({
-        sku: item.sku,
         name: item.name,
         vendor: item.vendor,
         cost: item.cost,
@@ -68,7 +66,6 @@ function ItemDialog({
       });
     } else {
       form.reset({
-        sku: "",
         name: "",
         vendor: "",
         cost: "0",
@@ -104,27 +101,18 @@ function ItemDialog({
         <DialogHeader>
           <DialogTitle>{item ? "Edit Inventory Item" : "Add New Inventory Item"}</DialogTitle>
           <DialogDescription>
-            {item ? "Update the details for this item." : "Enter the details for the new item. SKU must be unique."}
+            {item ? "Update the details for this item." : "Enter the details for the new item."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="sku" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SKU</FormLabel>
-                  <FormControl><Input placeholder="LAMP-001" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="category" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <FormControl><Input placeholder="Lighting" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
+            <FormField control={form.control} name="category" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <FormControl><Input placeholder="Lighting" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
             
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
@@ -246,7 +234,7 @@ export default function Inventory() {
           <div className="relative flex-1 max-w-sm w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
-              placeholder="Search by name, SKU, or category..." 
+              placeholder="Search by name or category..." 
               className="pl-9 bg-background"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -275,7 +263,6 @@ export default function Inventory() {
           <TableHeader>
               <TableRow>
                 <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead>SKU</TableHead>
                 <TableHead>Item</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Vendor</TableHead>
@@ -288,13 +275,13 @@ export default function Inventory() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                     Loading catalog...
                   </TableCell>
                 </TableRow>
               ) : filteredItems?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                     No items found. Try a different search or category.
                   </TableCell>
                 </TableRow>
@@ -310,7 +297,6 @@ export default function Inventory() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-xs font-medium">{item.sku}</TableCell>
                     <TableCell className="font-medium text-foreground">{item.name}</TableCell>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.vendor}</TableCell>
