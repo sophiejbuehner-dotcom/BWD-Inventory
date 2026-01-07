@@ -1,83 +1,68 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
-  --font-display: 'Playfair Display', serif;
-  --font-body: 'DM Sans', sans-serif;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
 
-  /* Elegant, neutral palette with a deep navy accent */
-  --background: 210 20% 98%;    /* Off-white */
-  --foreground: 220 15% 15%;    /* Dark gray text */
-  
-  --primary: 220 30% 20%;       /* Deep charcoal/navy */
-  --primary-foreground: 210 20% 98%;
-  
-  --secondary: 220 15% 90%;     /* Light gray */
-  --secondary-foreground: 220 30% 20%;
-  
-  --muted: 220 15% 94%;
-  --muted-foreground: 220 10% 45%;
-  
-  --accent: 25 20% 50%;         /* Subtle warm beige/taupe for accents */
-  --accent-foreground: 220 30% 20%;
-  
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 20% 98%;
-  
-  --border: 220 15% 85%;
-  --input: 220 15% 90%;
-  --ring: 220 30% 20%;
-  
-  --radius: 0.5rem;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.dark {
-  --background: 220 30% 12%;
-  --foreground: 210 20% 90%;
-  
-  --primary: 210 20% 98%;
-  --primary-foreground: 220 30% 20%;
-  
-  --secondary: 220 20% 20%;
-  --secondary-foreground: 210 20% 98%;
-  
-  --muted: 220 20% 18%;
-  --muted-foreground: 220 10% 60%;
-  
-  --accent: 25 15% 35%;
-  --accent-foreground: 210 20% 98%;
-  
-  --destructive: 0 60% 30%;
-  --destructive-foreground: 210 20% 98%;
-  
-  --border: 220 20% 20%;
-  --input: 220 20% 20%;
-  --ring: 210 20% 90%;
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
 }
 
-@layer base {
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-family: var(--font-body);
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
   }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    @apply font-semibold tracking-tight;
+  a:hover {
+    color: #747bff;
   }
-}
-
-/* Custom Scrollbar for a premium feel */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  @apply bg-border rounded-full hover:bg-muted-foreground/50 transition-colors;
+  button {
+    background-color: #f9f9f9;
+  }
 }
